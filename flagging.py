@@ -9,12 +9,12 @@ import json
 
 # Google Sheets setup
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name('/Users/pruthvin.jeripit/Desktop/Casana BP Sit study/casana-app/credentials.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
 client = gspread.authorize(creds)
 sheet = client.open("Casana-V1-V2-Phy").sheet1
 
 # Load Visit 1 data (path would be relative, assuming the file is in the same directory as the script)
-visit1_df = pd.read_csv('/Users/pruthvin.jeripit/Desktop/Casana BP Sit study/BiWeekly Presentations/master-0520-0719.csv')
+visit1_df = pd.read_csv('master-0520-0719.csv')
 
 # Streamlit UI
 st.title("Measurement Comparison/Re-measure App")
@@ -161,7 +161,7 @@ if st.button("Submit"):
             st.table(results_df)
 
             # Load email credentials from JSON file
-            with open('/Users/pruthvin.jeripit/Desktop/Casana BP Sit study/code-Phase2/email_credentials.json') as f:
+            with open('email_credentials.json') as f:
                 email_creds = json.load(f)
 
             sender_email = email_creds['email']
