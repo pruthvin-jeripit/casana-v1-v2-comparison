@@ -1,26 +1,32 @@
 import streamlit as st
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 import smtplib
 from email.mime.text import MIMEText
 import pandas as pd
 import re
-import json
-from io import StringIO
+from io import BytesIO
+from googleapiclient.discovery import build
 
-# Google Sheets setup
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+# Google Sheets and Drive setup
+scope = ["https://www.googleapis.com/auth/drive", "https://spreadsheets.google.com/feeds"]
 
 # Load credentials from Streamlit secrets
-google_credentials_dict = st.secrets["google_credentials"]
-google_credentials = json.dumps(google_credentials_dict)
-creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(google_credentials), scope)
+google_credentials_dict = st.secrets["GOOGLE_CREDENTIALS"]
+creds = service_account.Credentials.from_service_account_info(google_credentials_dict, scopes=scope)
 client = gspread.authorize(creds)
-sheet = client.open("Casana-V1-V2-Phy").sheet1
+drive_service = build('drive', 'v3', credentials=creds)
 
-# Load the CSV file (which should also be stored in Streamlit secrets)
-csv_data = st.secrets["my_csv_data"]["csv_content"]
-visit1_df = pd.read_csv(StringIO(csv_data))
+# Function to download CSV from Google Drive using the file ID
+def download_csv_from_drive(file_id):
+    request = drive_service.files().get_media(fileId=file_id)
+    file_data = BytesIO(request.execute())
+    return file_data
+
+# Load the CSV file from Google Drive
+file_id = "1ZWmuTR0c_78WbWEh3lwN4oAWE83iVyYS"
+csv_data = download_csv_from_drive(file_id)
+visit1_df = pd.read_csv(csv_data)
 
 # Streamlit UI and other logic remains the same...
 st.title("Measurement Comparison/Re-measure App")
@@ -167,8 +173,8 @@ if st.button("Submit"):
             st.table(results_df)
 
             # Load email credentials from Streamlit secrets
-            sender_email = st.secrets["email_credentials"]["email"]
-            sender_password = st.secrets["email_credentials"]["password"]
+            sender_email = st.secrets["EMAIL_CREDENTIALS"]["email"]
+            sender_password = st.secrets["EMAIL_CREDENTIALS"]["password"]
 
             # Send email if Red or Yellow
             if any(cat in ['Red', 'Yellow'] for cat in categories.values()):
