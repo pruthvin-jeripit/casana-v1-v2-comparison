@@ -6,17 +6,23 @@ from email.mime.text import MIMEText
 import pandas as pd
 import re
 import json
+from io import StringIO
 
 # Google Sheets setup
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+
+# Load credentials from Streamlit secrets
+google_credentials_dict = st.secrets["google_credentials"]
+google_credentials = json.dumps(google_credentials_dict)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(google_credentials), scope)
 client = gspread.authorize(creds)
 sheet = client.open("Casana-V1-V2-Phy").sheet1
 
-# Load Visit 1 data (path would be relative, assuming the file is in the same directory as the script)
-visit1_df = pd.read_csv('master-0520-0719.csv')
+# Load the CSV file (which should also be stored in Streamlit secrets)
+csv_data = st.secrets["my_csv_data"]
+visit1_df = pd.read_csv(StringIO(csv_data))
 
-# Streamlit UI
+# Streamlit UI and other logic remains the same...
 st.title("Measurement Comparison/Re-measure App")
 option = st.radio("Select Option:", ["Comparison", "Re-measure"])
 
@@ -160,12 +166,9 @@ if st.button("Submit"):
             results_df = pd.DataFrame(results, columns=["Measure", "Category", "Visit 1 Measure", "Visit 2 Measure"])
             st.table(results_df)
 
-            # Load email credentials from JSON file
-            with open('email_credentials.json') as f:
-                email_creds = json.load(f)
-
-            sender_email = email_creds['email']
-            sender_password = email_creds['password']
+            # Load email credentials from Streamlit secrets
+            sender_email = st.secrets["email_credentials"]["email"]
+            sender_password = st.secrets["email_credentials"]["password"]
 
             # Send email if Red or Yellow
             if any(cat in ['Red', 'Yellow'] for cat in categories.values()):
