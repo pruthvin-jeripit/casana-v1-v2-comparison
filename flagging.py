@@ -19,7 +19,7 @@ client = gspread.authorize(creds)
 sheet = client.open("Casana-V1-V2-Phy").sheet1
 
 # Load the CSV file (which should also be stored in Streamlit secrets)
-csv_data = st.secrets["my_csv_data"]
+csv_data = st.secrets["my_csv_data"]["csv_content"]
 visit1_df = pd.read_csv(StringIO(csv_data))
 
 # Streamlit UI and other logic remains the same...
