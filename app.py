@@ -1,30 +1,24 @@
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 import smtplib
 from email.mime.text import MIMEText
 import pandas as pd
 import re
 import json
-from io import StringIO
-import os
 
-# Google Sheets setup
+
+# Set up the Google Sheets API
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-
-# Load credentials from environment variables
-google_credentials_str = os.getenv("GOOGLE_CREDENTIALS")
-google_credentials = json.loads(google_credentials_str)
-creds = ServiceAccountCredentials.from_json_keyfile_dict(google_credentials, scope)
-client = gspread.authorize(creds)
+credentials = Credentials.from_service_account_file("credentials.json", scopes=scope)
+client = gspread.authorize(credentials)
 sheet = client.open("Casana-V1-V2-Phy").sheet1
 
-# Load the CSV file (which should also be stored securely)
-# You need to fetch the CSV content from a secured place; here it's assumed to be a shared link
-csv_url = "https://drive.google.com/uc?id=1ZWmuTR0c_78WbWEh3lwN4oAWE83iVyYS&export=download"
-visit1_df = pd.read_csv(csv_url)
+# Load Visit 1 data (path would be relative, assuming the file is in the same directory as the script)
+visit1_df = pd.read_csv("master-0520-0719.csv")
 
-# Streamlit UI and other logic remains the same...
+# Streamlit UI
 st.title("Measurement Comparison/Re-measure App")
 option = st.radio("Select Option:", ["Comparison", "Re-measure"])
 
@@ -45,7 +39,7 @@ if option == "Comparison":
         st.warning("Please select a coordinator.")
         st.stop()
 else:
-    remeasured_by = st.selectbox("Re-measured by", ["Select a person", "Dr. T", "Mitch"])
+    remeasured_by = st.selectbox("Re-measured by", ["Select a person", "Dr. T", "Mitch", "Dr. V", "Erica"])
     if remeasured_by == "Select a person":
         st.warning("Please select who re-measured.")
         st.stop()
@@ -168,11 +162,12 @@ if st.button("Submit"):
             results_df = pd.DataFrame(results, columns=["Measure", "Category", "Visit 1 Measure", "Visit 2 Measure"])
             st.table(results_df)
 
-            # Load email credentials from environment variables
-            email_credentials_str = os.getenv("EMAIL_CREDENTIALS")
-            email_credentials = json.loads(email_credentials_str)
-            sender_email = email_credentials["email"]
-            sender_password = email_credentials["password"]
+            # Load email credentials from JSON file
+            with open("email_credentials.json") as f:
+                email_creds = json.load(f)
+
+            sender_email = email_creds['email']
+            sender_password = email_creds['password']
 
             # Send email if Red or Yellow
             if any(cat in ['Red', 'Yellow'] for cat in categories.values()):
