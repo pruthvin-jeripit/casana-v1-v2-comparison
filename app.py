@@ -1,32 +1,28 @@
 import streamlit as st
 import gspread
-from google.oauth2 import service_account
+from oauth2client.service_account import ServiceAccountCredentials
 import smtplib
 from email.mime.text import MIMEText
 import pandas as pd
 import re
-from io import BytesIO
-from googleapiclient.discovery import build
+import json
+from io import StringIO
+import os
 
-# Google Sheets and Drive setup
-scope = ["https://www.googleapis.com/auth/drive", "https://spreadsheets.google.com/feeds"]
+# Google Sheets setup
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Load credentials from Streamlit secrets
-google_credentials_dict = st.secrets["GOOGLE_CREDENTIALS"]
-creds = service_account.Credentials.from_service_account_info(google_credentials_dict, scopes=scope)
+# Load credentials from environment variables
+google_credentials_str = os.getenv("GOOGLE_CREDENTIALS")
+google_credentials = json.loads(google_credentials_str)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(google_credentials, scope)
 client = gspread.authorize(creds)
-drive_service = build('drive', 'v3', credentials=creds)
+sheet = client.open("Casana-V1-V2-Phy").sheet1
 
-# Function to download CSV from Google Drive using the file ID
-def download_csv_from_drive(file_id):
-    request = drive_service.files().get_media(fileId=file_id)
-    file_data = BytesIO(request.execute())
-    return file_data
-
-# Load the CSV file from Google Drive
-file_id = "1ZWmuTR0c_78WbWEh3lwN4oAWE83iVyYS"
-csv_data = download_csv_from_drive(file_id)
-visit1_df = pd.read_csv(csv_data)
+# Load the CSV file (which should also be stored securely)
+# You need to fetch the CSV content from a secured place; here it's assumed to be a shared link
+csv_url = "https://drive.google.com/uc?id=1ZWmuTR0c_78WbWEh3lwN4oAWE83iVyYS&export=download"
+visit1_df = pd.read_csv(csv_url)
 
 # Streamlit UI and other logic remains the same...
 st.title("Measurement Comparison/Re-measure App")
@@ -172,9 +168,11 @@ if st.button("Submit"):
             results_df = pd.DataFrame(results, columns=["Measure", "Category", "Visit 1 Measure", "Visit 2 Measure"])
             st.table(results_df)
 
-            # Load email credentials from Streamlit secrets
-            sender_email = st.secrets["EMAIL_CREDENTIALS"]["email"]
-            sender_password = st.secrets["EMAIL_CREDENTIALS"]["password"]
+            # Load email credentials from environment variables
+            email_credentials_str = os.getenv("EMAIL_CREDENTIALS")
+            email_credentials = json.loads(email_credentials_str)
+            sender_email = email_credentials["email"]
+            sender_password = email_credentials["password"]
 
             # Send email if Red or Yellow
             if any(cat in ['Red', 'Yellow'] for cat in categories.values()):
