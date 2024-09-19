@@ -39,7 +39,7 @@ if option == "Comparison":
         st.warning("Please select a coordinator.")
         st.stop()
 else:
-    remeasured_by = st.selectbox("Re-measured by", ["Select a person", "Dr. T", "Mitch", "Dr. V", "Erica"])
+    remeasured_by = st.selectbox("Re-measured by", ["Select a person", "Dr. T", "Mitch","Alyssa", "Cyriah", "Eddie", "Gianna", "Sam"])
     if remeasured_by == "Select a person":
         st.warning("Please select who re-measured.")
         st.stop()
