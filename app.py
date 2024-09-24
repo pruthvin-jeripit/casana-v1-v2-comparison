@@ -16,7 +16,7 @@ client = gspread.authorize(credentials)
 sheet = client.open("Casana-V1-V2-Phy").sheet1
 
 # Load Visit 1 data (path would be relative, assuming the file is in the same directory as the script)
-visit1_df = pd.read_csv("master-visit1-2024-09-13.csv")
+visit1_df = pd.read_csv("master-visit1-2024-09-24.csv")
 
 # Streamlit UI
 st.title("Measurement Comparison/Re-measure App")
